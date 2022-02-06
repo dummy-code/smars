@@ -6,7 +6,7 @@
 #define echoPin 9       // servo-1 motor shield
 #define trigPin 10      // servo-2 motor shield
 
-#define MIN_DISTANCE 3  // cm
+#define MIN_DISTANCE 5  // cm
 #define MOTOR_SPEED 170
 
 #define CHECK_INTERVAL 500
