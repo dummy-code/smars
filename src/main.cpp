@@ -1,7 +1,7 @@
 #include <arduino.h>
 //#include <MotorControl.h>
-#include <AFMotor.h>
-
+//#include <AFMotor.h>
+#include <rover.h>
 
 #define echoPin 9       // servo-1 motor shield
 #define trigPin 10      // servo-2 motor shield
@@ -25,13 +25,16 @@ boolean statusChanged = false;
 //MotorControl motor_dx(1);
 //MotorControl motor_sx(2);
 
-AF_DCMotor motor_dx(1);
-AF_DCMotor motor_sx(2);
+//AF_DCMotor motor_dx(1);
+//AF_DCMotor motor_sx(2);
+
+Rover rover(1, 2);
 
 void SetSpeed(byte speed)
 {
-    motor_dx.setSpeed(speed);
-    motor_sx.setSpeed(speed);
+    //motor_dx.setSpeed(speed);
+    //motor_sx.setSpeed(speed);
+    rover.setSpeed(speed);
 
     if (logEnabled)
     {
@@ -58,10 +61,11 @@ void SetStatus(char newStatus)
 
 void GoForward()
 {
-    SetSpeed(MOTOR_SPEED);
+    //SetSpeed(MOTOR_SPEED);
 
-    motor_dx.run(FORWARD);
-    motor_sx.run(FORWARD);
+    //motor_dx.run(FORWARD);
+    //motor_sx.run(FORWARD);
+    rover.goForward();
 
     if (logEnabled)
     {
@@ -71,10 +75,11 @@ void GoForward()
 
 void TurnRight()
 {
-    SetSpeed(MOTOR_SPEED);
+    //SetSpeed(MOTOR_SPEED);
 
-    motor_dx.run(BACKWARD);
-    motor_sx.run(FORWARD);
+    //motor_dx.run(BACKWARD);
+    //motor_sx.run(FORWARD);
+    rover.turnRight();
 
     if (logEnabled)
     {
@@ -84,8 +89,9 @@ void TurnRight()
 
 void Stop()
 {
-    motor_dx.run(RELEASE);
-    motor_sx.run(RELEASE);
+    //motor_dx.run(RELEASE);
+    //motor_sx.run(RELEASE);
+    rover.stop();
 
     if (logEnabled)
     {
