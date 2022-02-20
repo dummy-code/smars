@@ -2,6 +2,7 @@
 
 #include <rover.h>
 #include <parameters.h>
+#include <IRremote.hpp>
 
 bool logEnabled;
 long lastCheck;
@@ -74,9 +75,9 @@ int GetDistance()
 
     if (logEnabled)
     {
-        Serial.print("Distance: ");
-        Serial.print(distance);
-        Serial.println(" cm");
+        //Serial.print("Distance: ");
+        //Serial.print(distance);
+        //Serial.println(" cm");
     }
 
     return distance;
@@ -173,6 +174,8 @@ void Execute()
     }
 }
 
+IRrecv irrecv(A0);
+decode_results results;
 
 void setup()
 {
@@ -181,9 +184,42 @@ void setup()
 
     Initialize();
     SetStatus(STATUS_FORWARD);
+    
+    irrecv.enableIRIn();
 }
+
+#define POWER 69
+#define CMD_FORWARD  9
+#define CMD_BACKWARD  7
+#define CMD_LEFT  68
+#define CMD_RIGHT  67
+#define CMD_STOP 64
 
 void loop()
 {
-    Execute();
+    if (irrecv.decode())     
+    {     
+        Serial.print("Command: ");     
+        Serial.println(irrecv.decodedIRData.command); //prints the value a a button press     
+        Serial.println(" ");     
+        irrecv.resume(); // Restart the ISR state machine and Receive the next value
+
+        if (irrecv.decodedIRData.command == CMD_FORWARD)
+        {
+            SetStatus(STATUS_FORWARD);
+        }     
+
+        if (irrecv.decodedIRData.command == CMD_STOP)
+        {
+            SetStatus(STATUS_STOP);
+        }     
+
+        if (irrecv.decodedIRData.command == CMD_RIGHT)
+        {
+            SetStatus(STATUS_TURNRIGHT);
+        }     
+    }   
+
+    //Execute();
+    rover.goForward();
 }
