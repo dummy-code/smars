@@ -67,8 +67,8 @@
 // ATmega328 and ATmega88
 #if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328PB__) || defined(__AVR_ATmega168__) || defined(__AVR_ATmega88P__) || defined(__AVR_ATmega88PB__)
 #  if !defined(IR_USE_AVR_TIMER1) && !defined(IR_USE_AVR_TIMER2)
-//#define IR_USE_AVR_TIMER1   // send pin = pin 9
-#define IR_USE_AVR_TIMER2     // send pin = pin 3
+#define IR_USE_AVR_TIMER1   // send pin = pin 9
+//#define IR_USE_AVR_TIMER2     // send pin = pin 3
 #  endif
 
 // Arduino Mega
@@ -1224,7 +1224,7 @@ void timerConfigForReceive() {
     } // wait for sync
       // Reset TCx
     TC->CTRLA.reg = TC_CTRLA_SWRST;
-    // When writing a ‘1’ to the CTRLA.SWRST bit it will immediately read as ‘1’.
+    // When writing a ï¿½1ï¿½ to the CTRLA.SWRST bit it will immediately read as ï¿½1ï¿½.
     // CTRL.SWRST will be cleared by hardware when the peripheral has been reset.
     while (TC->CTRLA.bit.SWRST) {
     }

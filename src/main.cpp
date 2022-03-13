@@ -38,6 +38,17 @@ void GoForward()
     }
 }
 
+void GoBackward()
+{
+    rover.goBackward();
+
+    if (logEnabled)
+    {
+        Serial.println("Go backward");
+    }
+}
+
+
 void TurnRight()
 {
     rover.turnRight();
@@ -47,6 +58,17 @@ void TurnRight()
         Serial.println("Start turn Right");
     }
 }
+
+void TurnLeft()
+{
+    rover.turnLeft();
+
+    if (logEnabled)
+    {
+        Serial.println("Start turn Left");
+    }
+}
+
 
 void Stop()
 {
@@ -75,9 +97,9 @@ int GetDistance()
 
     if (logEnabled)
     {
-        //Serial.print("Distance: ");
-        //Serial.print(distance);
-        //Serial.println(" cm");
+        Serial.print("Distance: ");
+        Serial.print(distance);
+        Serial.println(" cm");
     }
 
     return distance;
@@ -107,7 +129,7 @@ void CheckDistance(long interval)
     {
         if (GetDistance() <= MIN_DISTANCE)
         {
-            SetStatus(STATUS_TURNRIGHT);
+            SetStatus(STATUS_STOP);
         }
         else
         {
@@ -143,6 +165,18 @@ void Execute()
         return;
     }
 
+    if (status == STATUS_BACKWARD)
+    {
+        if (statusChanged)
+        {
+            GoBackward();
+            statusChanged = false;
+        }
+
+        return;
+    }
+
+
     if (status == STATUS_STOP)
     {
         if (statusChanged)
@@ -156,6 +190,7 @@ void Execute()
 
     if (status == STATUS_TURNRIGHT)
     {
+        /*
         TurnRight();
         if (statusChanged)
         {
@@ -169,9 +204,43 @@ void Execute()
             Serial.println("End turn Right");
             SetStatus(STATUS_FORWARD);
         }
+        */
+
+        if (statusChanged)
+        {
+            TurnRight();
+            statusChanged = false;
+        }
 
         return;
     }
+
+    if (status == STATUS_TURNLEFT)
+    {
+        /*
+        TurnRight();
+        if (statusChanged)
+        {
+            statusChanged = false;
+            startTurn = millis();
+        }
+
+        long elapsed = millis() - startTurn;
+        if (elapsed >= TURN_INTERVAL)
+        {
+            Serial.println("End turn Right");
+            SetStatus(STATUS_FORWARD);
+        }
+        */
+       
+        if (statusChanged)
+        {
+            TurnLeft();
+            statusChanged = false;
+        }
+
+        return;
+    }    
 }
 
 IRrecv irrecv(A0);
@@ -183,7 +252,7 @@ void setup()
     Serial.println();
 
     Initialize();
-    SetStatus(STATUS_FORWARD);
+    SetStatus(STATUS_STOP);
     
     irrecv.enableIRIn();
 }
@@ -209,17 +278,27 @@ void loop()
             SetStatus(STATUS_FORWARD);
         }     
 
-        if (irrecv.decodedIRData.command == CMD_STOP)
+        if (irrecv.decodedIRData.command == CMD_BACKWARD)
         {
-            SetStatus(STATUS_STOP);
+            SetStatus(STATUS_BACKWARD);
         }     
 
         if (irrecv.decodedIRData.command == CMD_RIGHT)
         {
             SetStatus(STATUS_TURNRIGHT);
         }     
+
+        if (irrecv.decodedIRData.command == CMD_LEFT)
+        {
+            SetStatus(STATUS_TURNLEFT);
+        }     
+
+        if (irrecv.decodedIRData.command == CMD_STOP)
+        {
+            SetStatus(STATUS_STOP);
+        }     
+
     }   
 
-    //Execute();
-    rover.goForward();
+    Execute();
 }
