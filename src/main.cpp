@@ -3,82 +3,13 @@
 #include <rover.h>
 #include <parameters.h>
 #include <IRremote.hpp>
+#include <statusmanager.h>
 
 bool logEnabled;
 long lastCheck;
-long startTurn;
-char status = STATUS_STOP;
-boolean statusChanged = false;
 
 Rover rover(1, 2);
-
-void SetStatus(char newStatus)
-{
-    if (newStatus == status)
-        return;
-
-    if (logEnabled)
-    {
-        Serial.print("Set status: ");
-        Serial.println(newStatus);
-    }
-
-    status = newStatus;
-    statusChanged = true;
-}
-
-
-void GoForward()
-{
-    rover.goForward();
-
-    if (logEnabled)
-    {
-        Serial.println("Go forward");
-    }
-}
-
-void GoBackward()
-{
-    rover.goBackward();
-
-    if (logEnabled)
-    {
-        Serial.println("Go backward");
-    }
-}
-
-
-void TurnRight()
-{
-    rover.turnRight();
-
-    if (logEnabled)
-    {
-        Serial.println("Start turn Right");
-    }
-}
-
-void TurnLeft()
-{
-    rover.turnLeft();
-
-    if (logEnabled)
-    {
-        Serial.println("Start turn Left");
-    }
-}
-
-
-void Stop()
-{
-    rover.stop();
-
-    if (logEnabled)
-    {
-        Serial.println("Stop");
-    }
-}
+StatusManager sm;
 
 int GetDistance()
 {
@@ -105,6 +36,53 @@ int GetDistance()
     return distance;
 }
 
+void StopStatusAction()
+{
+    rover.stop();
+}
+
+void FowardStatusAction()
+{
+    rover.goForward();
+    sm.ChangeStatus(Status::FindObstacle);
+}
+
+void BackwardStatusAction()
+{
+    rover.goBackward();
+}
+
+void TurnLeftStatusAction()
+{
+    rover.turnLeft();
+}
+
+void TurnRightStatusAction()
+{
+    rover.turnRight();
+}
+
+void FindObstacleStatusAction()
+{
+    long elapsed = millis() - lastCheck;
+    if (elapsed >= CHECK_INTERVAL)
+    {
+        if (GetDistance() <= MIN_DISTANCE)
+        {
+            sm.ChangeStatus(Status::Avoid);
+        }
+
+        lastCheck = millis();
+    }
+}
+
+void AvoidStatusAction()
+{
+    rover.turnRight();
+    delay(500);
+    sm.ChangeStatus(Status::Forward);
+}
+
 void Initialize()
 {
     pinMode(trigPin, OUTPUT);
@@ -113,134 +91,14 @@ void Initialize()
     rover.setSpeed(MOTOR_SPEED);
 
     logEnabled = true;
-}
 
-void CheckDistance(long interval)
-{
-    /*
-    if (logEnabled)
-    {
-        Serial.println("Check distance");
-    }
-    */
-
-    long elapsed = millis() - lastCheck;
-    if (elapsed >= interval)
-    {
-        if (GetDistance() <= MIN_DISTANCE)
-        {
-            SetStatus(STATUS_STOP);
-        }
-        else
-        {
-            SetStatus(STATUS_FORWARD);
-        }
-
-        lastCheck = millis();
-    }
-}
-
-
-void Execute()
-{
-    /*
-    if (logEnabled)
-    {
-        Serial.print("Execute: ");
-        Serial.println(status);
-        Serial.print("Changed: ");
-        Serial.println(statusChanged);
-    }
-    */
-
-    if (status == STATUS_FORWARD)
-    {
-        if (statusChanged)
-        {
-            GoForward();
-            statusChanged = false;
-        }
-
-        CheckDistance(MIN_DISTANCE);
-        return;
-    }
-
-    if (status == STATUS_BACKWARD)
-    {
-        if (statusChanged)
-        {
-            GoBackward();
-            statusChanged = false;
-        }
-
-        return;
-    }
-
-
-    if (status == STATUS_STOP)
-    {
-        if (statusChanged)
-        {
-            Stop();
-            statusChanged = false;
-        }
-
-        return;
-    }
-
-    if (status == STATUS_TURNRIGHT)
-    {
-        /*
-        TurnRight();
-        if (statusChanged)
-        {
-            statusChanged = false;
-            startTurn = millis();
-        }
-
-        long elapsed = millis() - startTurn;
-        if (elapsed >= TURN_INTERVAL)
-        {
-            Serial.println("End turn Right");
-            SetStatus(STATUS_FORWARD);
-        }
-        */
-
-        if (statusChanged)
-        {
-            TurnRight();
-            statusChanged = false;
-        }
-
-        return;
-    }
-
-    if (status == STATUS_TURNLEFT)
-    {
-        /*
-        TurnRight();
-        if (statusChanged)
-        {
-            statusChanged = false;
-            startTurn = millis();
-        }
-
-        long elapsed = millis() - startTurn;
-        if (elapsed >= TURN_INTERVAL)
-        {
-            Serial.println("End turn Right");
-            SetStatus(STATUS_FORWARD);
-        }
-        */
-       
-        if (statusChanged)
-        {
-            TurnLeft();
-            statusChanged = false;
-        }
-
-        return;
-    }    
+    sm.SetStatusAction(Status::Stop, StopStatusAction, false);
+    sm.SetStatusAction(Status::Forward, FowardStatusAction, false);
+    sm.SetStatusAction(Status::Backward, BackwardStatusAction, false);
+    sm.SetStatusAction(Status::TurnLeft, TurnLeftStatusAction, false);
+    sm.SetStatusAction(Status::TurnRigh, TurnRightStatusAction, false);
+    sm.SetStatusAction(Status::FindObstacle, FindObstacleStatusAction, true);
+    sm.SetStatusAction(Status::Avoid, AvoidStatusAction, true);
 }
 
 IRrecv irrecv(A0);
@@ -252,8 +110,8 @@ void setup()
     Serial.println();
 
     Initialize();
-    SetStatus(STATUS_STOP);
     
+    sm.ChangeStatus(Status::Stop);
     irrecv.enableIRIn();
 }
 
@@ -275,30 +133,30 @@ void loop()
 
         if (irrecv.decodedIRData.command == CMD_FORWARD)
         {
-            SetStatus(STATUS_FORWARD);
+            sm.ChangeStatus(Status::Forward);
         }     
 
         if (irrecv.decodedIRData.command == CMD_BACKWARD)
         {
-            SetStatus(STATUS_BACKWARD);
+            sm.ChangeStatus(Status::Backward);
         }     
 
         if (irrecv.decodedIRData.command == CMD_RIGHT)
         {
-            SetStatus(STATUS_TURNRIGHT);
+            sm.ChangeStatus(Status::TurnRigh);
         }     
 
         if (irrecv.decodedIRData.command == CMD_LEFT)
         {
-            SetStatus(STATUS_TURNLEFT);
+            sm.ChangeStatus(Status::TurnLeft);
         }     
 
         if (irrecv.decodedIRData.command == CMD_STOP)
         {
-            SetStatus(STATUS_STOP);
+            sm.ChangeStatus(Status::Stop);
         }     
 
     }   
 
-    Execute();
+    sm.ActionExecute();
 }
