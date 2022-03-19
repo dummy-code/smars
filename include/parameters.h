@@ -6,8 +6,8 @@
 
 #define MIN_DISTANCE 10  // cm
 #define MOTOR_SPEED 150
+#define TURN_TIME 500
 
 #define CHECK_INTERVAL 10
-#define TURN_INTERVAL 2000
 
 #endif

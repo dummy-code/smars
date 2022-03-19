@@ -59,11 +59,11 @@ StatusManager::~StatusManager()
 
 void StatusManager::ChangeStatus(Status newStatus)
 {
-    //if (newStatus == currentStatus)
-    //    return;
+    if (newStatus == currentStatus)
+        return;
     
-    Serial.println(currentStatus);
-    Serial.println(newStatus);
+    //Serial.println(currentStatus);
+    //Serial.println(newStatus);
 
     currentStatus = newStatus;
     statusChanged = true;
@@ -78,15 +78,15 @@ void StatusManager::ActionExecute()
 {
     if (!actions[currentStatus].action)
     {
-        Serial.println("no action");
+        //Serial.println("no action");
         return;
     }
 
     if (actions[currentStatus].always
         || statusChanged)
     {
-        Serial.print("Start ");
-        Serial.println(actions[currentStatus].status);
+        //Serial.print("Start ");
+        //Serial.println(actions[currentStatus].status);
         statusChanged = false;
         actions[currentStatus].Execute();
         return;

@@ -79,7 +79,7 @@ void FindObstacleStatusAction()
 void AvoidStatusAction()
 {
     rover.turnRight();
-    delay(500);
+    delay(TURN_TIME);
     sm.ChangeStatus(Status::Forward);
 }
 
