@@ -2,14 +2,15 @@
 
 #include <rover.h>
 #include <parameters.h>
-#include <IRremote.hpp>
 #include <statusmanager.h>
+#include <remotecommands.h>
 
-bool logEnabled;
+//bool logEnabled;
 long lastCheck;
 
 Rover rover(1, 2);
 StatusManager sm;
+RemoteCommands remote(IR_REMOTE_PIN);
 
 int GetDistance()
 {
@@ -26,12 +27,14 @@ int GetDistance()
     duration = pulseIn(echoPin, HIGH);
     distance = duration * 0.0343 / 2;
 
+    /*
     if (logEnabled)
     {
         Serial.print("Distance: ");
         Serial.print(distance);
         Serial.println(" cm");
     }
+    */
 
     return distance;
 }
@@ -83,14 +86,47 @@ void AvoidStatusAction()
     sm.ChangeStatus(Status::Forward);
 }
 
+void changeStatusFromRemote()
+{
+    int cmd = remote.lastCommand();
+    Serial.println(cmd);
+
+    if (cmd == Command::Unknown_cmd)
+        return;
+
+    if (cmd == Command::Forward_cmd)
+    {
+        sm.ChangeStatus(Status::Forward);
+    }
+
+    if (cmd == Command::Backward_cmd)
+    {
+        sm.ChangeStatus(Status::Backward);
+    }
+
+    if (cmd == Command::Right_cmd)
+    {
+        sm.ChangeStatus(Status::TurnRigh);
+    }
+
+    if (cmd == Command::Left_cmd)
+    {
+        sm.ChangeStatus(Status::TurnLeft);
+    }
+
+    if (cmd == Command::Stop_cmd)
+    {
+        sm.ChangeStatus(Status::Stop);
+    }
+}
+
 void Initialize()
 {
     pinMode(trigPin, OUTPUT);
     pinMode(echoPin, INPUT);
 
     rover.setSpeed(MOTOR_SPEED);
-
-    logEnabled = true;
+    remote.enable();
 
     sm.SetStatusAction(Status::Stop, StopStatusAction, false);
     sm.SetStatusAction(Status::Forward, FowardStatusAction, false);
@@ -101,9 +137,6 @@ void Initialize()
     sm.SetStatusAction(Status::Avoid, AvoidStatusAction, true);
 }
 
-IRrecv irrecv(A0);
-decode_results results;
-
 void setup()
 {
     Serial.begin(9600);
@@ -112,51 +145,10 @@ void setup()
     Initialize();
     
     sm.ChangeStatus(Status::Stop);
-    irrecv.enableIRIn();
 }
 
-#define POWER 69
-#define CMD_FORWARD  9
-#define CMD_BACKWARD  7
-#define CMD_LEFT  68
-#define CMD_RIGHT  67
-#define CMD_STOP 64
-
 void loop()
-{
-    if (irrecv.decode())     
-    {     
-        Serial.print("Command: ");     
-        Serial.println(irrecv.decodedIRData.command); //prints the value a a button press     
-        Serial.println(" ");     
-        irrecv.resume(); // Restart the ISR state machine and Receive the next value
-
-        if (irrecv.decodedIRData.command == CMD_FORWARD)
-        {
-            sm.ChangeStatus(Status::Forward);
-        }     
-
-        if (irrecv.decodedIRData.command == CMD_BACKWARD)
-        {
-            sm.ChangeStatus(Status::Backward);
-        }     
-
-        if (irrecv.decodedIRData.command == CMD_RIGHT)
-        {
-            sm.ChangeStatus(Status::TurnRigh);
-        }     
-
-        if (irrecv.decodedIRData.command == CMD_LEFT)
-        {
-            sm.ChangeStatus(Status::TurnLeft);
-        }     
-
-        if (irrecv.decodedIRData.command == CMD_STOP)
-        {
-            sm.ChangeStatus(Status::Stop);
-        }     
-
-    }   
-
+{   
+    changeStatusFromRemote();
     sm.ActionExecute();
 }
